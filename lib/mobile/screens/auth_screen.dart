@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:kasir_app2/mobile/screens/main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -35,7 +36,7 @@ class _AuthScreenState extends State<AuthScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const DashboardScreen(),
+              builder: (context) => const MainScreen(),
             ),
           );
         }
@@ -220,17 +221,4 @@ class _AuthTextField extends StatelessWidget {
   }
 }
 
-/// ✅ Dummy DashboardScreen (ganti sesuai kebutuhanmu)
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Dashboard")),
-      body: const Center(
-        child: Text("Selamat datang di Dashboard!"),
-      ),
-    );
-  }
-}
