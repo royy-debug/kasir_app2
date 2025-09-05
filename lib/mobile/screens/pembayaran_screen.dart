@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/obat_detail.dart';
 import '../services/obat_service.dart';
 import 'detail_pembayaran_screen.dart';
+
 class PembayaranScreen extends StatefulWidget {
   final Map<Obat, int> cart;
 
@@ -13,8 +14,8 @@ class PembayaranScreen extends StatefulWidget {
 
 class _PembayaranScreenState extends State<PembayaranScreen> {
   final _service = ObatService();
-  String _metodePembayaran = "Cash";
-  late final double _totalHarga; // ✅ dihitung sekali aja
+  final ValueNotifier<String> _metodePembayaran = ValueNotifier("Cash");
+  late final double _totalHarga;
 
   @override
   void initState() {
@@ -25,13 +26,59 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
     );
   }
 
+  void _tampilkanQRIS(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Pembayaran Non-Cash", textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              "assets/images/qris_gopay.jpg",
+              width: 200,
+              height: 200,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              "Silakan scan QR GoPay di atas untuk menyelesaikan pembayaran.\n"
+              "Klik 'Selesai' setelah pembayaran berhasil.",
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Batal"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _prosesPembayaran();
+            },
+            child: const Text("Selesai"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _prosesPembayaran() async {
     try {
-      // 🔹 Step 1: cek & update stok lewat service
       for (var entry in widget.cart.entries) {
         final obat = entry.key;
         final jumlah = entry.value;
-
         final stokTerbaru = await _service.getStokById(obat.id!);
 
         if (stokTerbaru >= jumlah) {
@@ -46,14 +93,12 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
         }
       }
 
-      // 🔹 Step 2: simpan transaksi lewat service
       await _service.simpanTransaksi(
         cart: widget.cart,
-        metode: _metodePembayaran,
+        metode: _metodePembayaran.value,
         total: _totalHarga,
       );
 
-      // 🔹 Step 3: pindah ke struk pembayaran
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -61,11 +106,10 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
             builder: (_) => DetailPembayaranScreen(
               cart: widget.cart,
               totalHarga: _totalHarga,
-              metode: _metodePembayaran,
+              metode: _metodePembayaran.value,
             ),
           ),
         );
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Pembayaran berhasil ✅")),
         );
@@ -80,6 +124,12 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
   }
 
   @override
+  void dispose() {
+    _metodePembayaran.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Pembayaran")),
@@ -87,47 +137,52 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // ✅ Pisahkan ke widget agar gak rebuild tiap kali state kecil berubah
             Expanded(child: _CartList(cart: widget.cart)),
 
             const Divider(),
             ListTile(
-              title: const Text("Total",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              title: const Text(
+                "Total",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               trailing: Text(
                 "Rp $_totalHarga",
                 style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // ✅ hanya dropdown ini yang trigger rebuild
-            DropdownButtonFormField<String>(
-              value: _metodePembayaran,
-              items: const [
-                DropdownMenuItem(value: "Cash", child: Text("Cash")),
-                DropdownMenuItem(
-                    value: "Non-Cash",
-                    child: Text("Non-Cash (Transfer, e-Wallet)")),
-              ],
-              onChanged: (val) => setState(() => _metodePembayaran = val!),
-              decoration: const InputDecoration(
-                labelText: "Metode Pembayaran",
-                border: OutlineInputBorder(),
-              ),
+            // ✅ Dropdown hanya rebuild sendiri
+            ValueListenableBuilder<String>(
+              valueListenable: _metodePembayaran,
+              builder: (context, metode, _) {
+                return DropdownButtonFormField<String>(
+                  value: metode,
+                  items: const [
+                    DropdownMenuItem(value: "Cash", child: Text("Cash")),
+                    DropdownMenuItem(
+                        value: "Non-Cash",
+                        child: Text("Non-Cash (Transfer, e-Wallet)")),
+                  ],
+                  onChanged: (val) => _metodePembayaran.value = val!,
+                  decoration: const InputDecoration(
+                    labelText: "Metode Pembayaran",
+                    border: OutlineInputBorder(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 20),
 
-            ElevatedButton.icon(
-              onPressed: _prosesPembayaran,
-              icon: const Icon(Icons.check),
-              label: const Text("Bayar Sekarang"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                minimumSize: const Size(double.infinity, 50),
-              ),
-            )
+            // ✅ Tombol bayar terpisah
+            _TombolBayar(
+              metodePembayaran: _metodePembayaran,
+              prosesPembayaran: _prosesPembayaran,
+              tampilkanQRIS: _tampilkanQRIS,
+            ),
           ],
         ),
       ),
@@ -135,16 +190,18 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
   }
 }
 
-// 🔹 widget terpisah biar gak ikut rebuild
+// 🔹 ListView pakai builder (lebih efisien)
 class _CartList extends StatelessWidget {
   final Map<Obat, int> cart;
-
   const _CartList({required this.cart});
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: cart.entries.map((entry) {
+    final entries = cart.entries.toList();
+    return ListView.builder(
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final entry = entries[index];
         final obat = entry.key;
         final jumlah = entry.value;
         return ListTile(
@@ -152,7 +209,44 @@ class _CartList extends StatelessWidget {
           subtitle: Text("Jumlah: $jumlah x Rp${obat.harga}"),
           trailing: Text("Rp ${obat.harga * jumlah}"),
         );
-      }).toList(),
+      },
+    );
+  }
+}
+
+// 🔹 Tombol bayar dipisah biar gak rebuild
+class _TombolBayar extends StatelessWidget {
+  final ValueNotifier<String> metodePembayaran;
+  final Future<void> Function() prosesPembayaran;
+  final void Function(BuildContext) tampilkanQRIS;
+
+  const _TombolBayar({
+    required this.metodePembayaran,
+    required this.prosesPembayaran,
+    required this.tampilkanQRIS,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<String>(
+      valueListenable: metodePembayaran,
+      builder: (context, metode, _) {
+        return ElevatedButton.icon(
+          onPressed: () {
+            if (metode == "Cash") {
+              prosesPembayaran();
+            } else {
+              tampilkanQRIS(context);
+            }
+          },
+          icon: const Icon(Icons.check),
+          label: const Text("Bayar Sekarang"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            minimumSize: const Size(double.infinity, 50),
+          ),
+        );
+      },
     );
   }
 }
