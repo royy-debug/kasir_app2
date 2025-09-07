@@ -15,10 +15,10 @@ class _ObatFormScreenState extends State<ObatFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _service = ObatService();
 
-  late TextEditingController _namaCtrl;
-  late TextEditingController _kategoriCtrl;
-  late TextEditingController _stokCtrl;
-  late TextEditingController _hargaCtrl;
+  late final TextEditingController _namaCtrl;
+  late final TextEditingController _kategoriCtrl;
+  late final TextEditingController _stokCtrl;
+  late final TextEditingController _hargaCtrl;
 
   bool _saving = false;
 
@@ -27,8 +27,10 @@ class _ObatFormScreenState extends State<ObatFormScreen> {
     super.initState();
     _namaCtrl = TextEditingController(text: widget.obat?.nama ?? '');
     _kategoriCtrl = TextEditingController(text: widget.obat?.kategori ?? '');
-    _stokCtrl = TextEditingController(text: widget.obat?.stok?.toString() ?? '');
-    _hargaCtrl = TextEditingController(text: widget.obat?.harga?.toString() ?? '');
+    _stokCtrl =
+        TextEditingController(text: widget.obat?.stok?.toString() ?? '');
+    _hargaCtrl =
+        TextEditingController(text: widget.obat?.harga?.toString() ?? '');
   }
 
   @override
@@ -40,24 +42,18 @@ class _ObatFormScreenState extends State<ObatFormScreen> {
     super.dispose();
   }
 
-  String? _required(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return "Wajib diisi";
-    }
-    return null;
-  }
+  String? _required(String? value) =>
+      (value == null || value.trim().isEmpty) ? "Wajib diisi" : null;
 
-  String? _validInt(String? value) {
-    if (value == null || value.isEmpty) return null;
-    if (int.tryParse(value) == null) return "Harus angka bulat";
-    return null;
-  }
+  String? _validInt(String? value) =>
+      (value != null && value.isNotEmpty && int.tryParse(value) == null)
+          ? "Harus angka bulat"
+          : null;
 
-  String? _validDouble(String? value) {
-    if (value == null || value.isEmpty) return null;
-    if (double.tryParse(value) == null) return "Harus angka";
-    return null;
-  }
+  String? _validDouble(String? value) =>
+      (value != null && value.isNotEmpty && double.tryParse(value) == null)
+          ? "Harus angka"
+          : null;
 
   Future<void> _saveData() async {
     if (!_formKey.currentState!.validate()) return;
@@ -65,7 +61,7 @@ class _ObatFormScreenState extends State<ObatFormScreen> {
     setState(() => _saving = true);
 
     final obat = Obat(
-      id: widget.obat?.id, // null kalau tambah
+      id: widget.obat?.id,
       nama: _namaCtrl.text.trim(),
       kategori: _kategoriCtrl.text.trim(),
       stok: int.tryParse(_stokCtrl.text) ?? 0,
@@ -79,7 +75,7 @@ class _ObatFormScreenState extends State<ObatFormScreen> {
         await _service.updateObat(widget.obat!.id!, obat);
       }
 
-      if (mounted) Navigator.pop(context, true); // ✅ kirim "true" biar list bisa refresh
+      if (mounted) Navigator.pop(context, "goToProduk"); // 🔹 kirim signal balik
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -93,71 +89,75 @@ class _ObatFormScreenState extends State<ObatFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: ListView(
-          children: [
-            TextFormField(
-              controller: _namaCtrl,
-              decoration: const InputDecoration(labelText: "Nama Obat"),
-              validator: _required,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _kategoriCtrl,
-              decoration: const InputDecoration(labelText: "Kategori"),
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _stokCtrl,
-              decoration: const InputDecoration(labelText: "Stok"),
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              validator: _validInt,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _hargaCtrl,
-              decoration: const InputDecoration(labelText: "Harga"),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-              ],
-              validator: _validDouble,
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.obat == null ? "Tambah Obat" : "Edit Obat"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _namaCtrl,
+                decoration: const InputDecoration(labelText: "Nama Obat"),
+                validator: _required,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _kategoriCtrl,
+                decoration: const InputDecoration(labelText: "Kategori"),
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _stokCtrl,
+                decoration: const InputDecoration(labelText: "Stok"),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: _validInt,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _hargaCtrl,
+                decoration: const InputDecoration(labelText: "Harga"),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                ],
+                validator: _validDouble,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _saving ? null : _saveData,
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save),
+                  label: Text(
+                    _saving ? "Menyimpan..." : "Simpan",
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ),
-                onPressed: _saving ? null : _saveData,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 18, height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(
-                  _saving ? "Menyimpan..." : "Simpan",
-                  style: const TextStyle(fontSize: 16),
-                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

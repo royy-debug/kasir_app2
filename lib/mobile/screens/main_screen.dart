@@ -15,11 +15,11 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  // ✅ Jadikan static final supaya tidak dibuat ulang saat rebuild
+  // ✅ Jangan langsung taruh ObatFormScreen di _pages
   static final List<Widget> _pages = [
-    const DashboardScreen(),   // jangan ada AppBar di dalam screen ini
+    const DashboardScreen(),
     const ObatListScreen(),
-    const ObatFormScreen(),
+    const SizedBox(), // placeholder untuk Tambah Produk
   ];
 
   static const List<String> _titles = [
@@ -28,18 +28,25 @@ class _MainScreenState extends State<MainScreen> {
     "Tambah Produk",
   ];
 
-  void _onItemTapped(int index) {
-    if (_selectedIndex != index) {
-      setState(() {
-        _selectedIndex = index;
-      });
+  void _onItemTapped(int index) async {
+    if (index == 2) {
+      // 🔹 Kalau tab Tambah Produk dipilih, buka form pakai push
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ObatFormScreen()),
+      );
+
+      // 🔹 Kalau hasilnya "goToProduk", pindah ke tab Produk
+      if (result == "goToProduk") {
+        setState(() => _selectedIndex = 1);
+      }
+    } else {
+      setState(() => _selectedIndex = index);
     }
   }
 
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
-    // ✅ Tidak perlu Navigator pushReplacement
-    // karena Wrapper/StreamBuilder di main.dart yang akan redirect ke AuthScreen
   }
 
   @override
@@ -56,13 +63,10 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-
-      // ✅ IndexedStack simpan state tiap halaman
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

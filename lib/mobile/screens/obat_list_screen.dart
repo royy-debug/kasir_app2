@@ -13,8 +13,8 @@ class ObatListScreen extends StatefulWidget {
 
 class _ObatListScreenState extends State<ObatListScreen> {
   final _service = ObatService();
-  final Map<String, int> _cart = {}; // key = id Obat
-  List<Obat> _obatList = []; // ✅ simpan snapshot obat di sini
+  final Map<String, int> _cart = {};
+  List<Obat> _obatList = [];
 
   void _tambahObat(Obat obat) {
     if (obat.stok > (_cart[obat.id] ?? 0)) {
@@ -42,7 +42,6 @@ class _ObatListScreenState extends State<ObatListScreen> {
     );
   }
 
-  // 🔹 Bottom sheet edit / hapus
   void _showOptions(Obat obat) {
     showModalBottomSheet(
       context: context,
@@ -95,105 +94,121 @@ class _ObatListScreenState extends State<ObatListScreen> {
           return const Center(child: Text("Belum ada data obat"));
         }
 
-        return Scaffold(
-          body: GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 0.75,
-            ),
-            itemCount: _obatList.length,
-            itemBuilder: (_, i) {
-              final obat = _obatList[i];
-              final jumlahDipilih = _cart[obat.id] ?? 0;
+        return Stack(
+          children: [
+            GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: _obatList.length,
+              itemBuilder: (_, i) {
+                final obat = _obatList[i];
+                final jumlahDipilih = _cart[obat.id] ?? 0;
 
-              return GestureDetector(
-                onLongPress: () => _showOptions(obat), // tekan lama
-                child: Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 5,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 🔹 Bagian gambar/ikon
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.medical_services, size: 50, color: Colors.grey),
+                return GestureDetector(
+                  onLongPress: () => _showOptions(obat),
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 5,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(16)),
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.medical_services,
+                                  size: 50, color: Colors.grey),
+                            ),
                           ),
                         ),
-                      ),
-                      // 🔹 Bagian detail
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(obat.nama,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text("Kategori: ${obat.kategori}",
-                                style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-                            Text("Stok: ${obat.stok}",
-                                style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-                            const SizedBox(height: 6),
-                            Text("Rp ${obat.harga}",
-                                style: const TextStyle(
-                                    fontSize: 15, fontWeight: FontWeight.bold, color: Colors.blue)),
-                          ],
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(obat.nama,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                              Text("Kategori: ${obat.kategori}",
+                                  style: TextStyle(
+                                      fontSize: 13, color: Colors.grey[600])),
+                              Text("Stok: ${obat.stok}",
+                                  style: TextStyle(
+                                      fontSize: 13, color: Colors.grey[600])),
+                              const SizedBox(height: 6),
+                              Text("Rp ${obat.harga}",
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue)),
+                            ],
+                          ),
                         ),
-                      ),
-                      // 🔹 Tombol tambah / counter
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          child: jumlahDipilih == 0
-                              ? ElevatedButton(
-                                  key: ValueKey("TambahBtn-${obat.id}"),
-                                  onPressed: () => _tambahObat(obat),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    minimumSize: const Size(double.infinity, 40),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            child: jumlahDipilih == 0
+                                ? ElevatedButton(
+                                    key: ValueKey("TambahBtn-${obat.id}"),
+                                    onPressed: () => _tambahObat(obat),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      minimumSize:
+                                          const Size(double.infinity, 40),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
+                                    child: const Text("Tambah"),
+                                  )
+                                : Row(
+                                    key: ValueKey("CounterRow-${obat.id}"),
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        onPressed: () => _kurangiObat(obat),
+                                        icon: const Icon(Icons.remove_circle,
+                                            color: Colors.red),
+                                      ),
+                                      Text("$jumlahDipilih",
+                                          style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold)),
+                                      IconButton(
+                                        onPressed: () => _tambahObat(obat),
+                                        icon: const Icon(Icons.add_circle,
+                                            color: Colors.green),
+                                      ),
+                                    ],
                                   ),
-                                  child: const Text("Tambah"),
-                                )
-                              : Row(
-                                  key: ValueKey("CounterRow-${obat.id}"),
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    IconButton(
-                                      onPressed: () => _kurangiObat(obat),
-                                      icon: const Icon(Icons.remove_circle, color: Colors.red),
-                                    ),
-                                    Text("$jumlahDipilih",
-                                        style: const TextStyle(
-                                            fontSize: 16, fontWeight: FontWeight.bold)),
-                                    IconButton(
-                                      onPressed: () => _tambahObat(obat),
-                                      icon: const Icon(Icons.add_circle, color: Colors.green),
-                                    ),
-                                  ],
-                                ),
-                        ),
-                      )
-                    ],
+                          ),
+                        )
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
-          // 🔹 FAB hanya muncul kalau cart tidak kosong
-          floatingActionButton: _cart.isNotEmpty
-              ? FloatingActionButton.extended(
+                );
+              },
+            ),
+
+            // FAB tetap muncul di luar GridView
+            if (_cart.isNotEmpty)
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: FloatingActionButton.extended(
                   onPressed: () async {
                     final selectedCart = {
                       for (var obat in _obatList)
@@ -211,8 +226,9 @@ class _ObatListScreenState extends State<ObatListScreen> {
                   },
                   icon: const Icon(Icons.payment),
                   label: Text("Bayar (${_cart.length})"),
-                )
-              : null,
+                ),
+              ),
+          ],
         );
       },
     );
