@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kasir_app2/mobile/screens/auth_screen.dart';
 import 'package:kasir_app2/mobile/screens/main_screen.dart';
+import 'package:kasir_app2/mobile/screens/splash_screen.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: const Wrapper(), // ✅ cek login otomatis
+      home: SplashScreen(), // ✅ cek login otomatis
     );
   }
 }
